@@ -1,0 +1,188 @@
+# Gamos 发行流水线。
+#
+# 产出与 zai-org/zcode 的发行模型保持一致：
+# - CLI 运行包：pnpm build:zcode 生成 releases/<version>/zcode-<version>.tar.gz、
+#   sha256.txt、latest.json、install.sh（新增 install.ps1 覆盖 Windows）。
+#   完整目录上传到下载根地址；这里以 GitHub Releases 附件承载（扁平布局），
+#   安装脚本内置嵌套→扁平的回退逻辑，两种托管形态均可安装。
+# - 桌面安装包：pnpm bundle:desktop -- --os win|linux --arch x64 产出
+#   NSIS .exe / AppImage / deb / rpm。
+#
+# 触发：推送 v* 标签，或在 Actions 页面手动运行 workflow_dispatch
+# （默认按根 package.json 版本生成 v<version> 标签与 Release）。
+
+name: Release distribution
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Resolve release tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.version.outputs.tag_name }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Resolve version tag
+        id: version
+        run: |
+          echo "tag_name=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+  cli-dist:
+    name: CLI distribution (tarball + install.sh + install.ps1)
+    runs-on: ubuntu-latest
+    needs: prepare
+    env:
+      HUSKY: "0"
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI distribution
+        run: |
+          node scripts/build-zcode.mjs \
+            --base-url "https://github.com/payswapdotorg/gamos/releases/latest/download/"
+
+      - name: Upload distribution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-dist
+          if-no-files-found: error
+          path: dist/zcode/
+
+      - name: Attach distribution to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/zcode/latest.json
+            dist/zcode/install.sh
+            dist/zcode/install.ps1
+            dist/zcode/releases/*/*.tar.gz
+            dist/zcode/releases/*/sha256.txt
+
+  desktop-windows:
+    name: Desktop installer (Windows x64, NSIS)
+    runs-on: windows-latest
+    needs: prepare
+    env:
+      HUSKY: "0"
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Bundle desktop app
+        run: pnpm bundle:desktop -- --os win --arch x64
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-win-x64
+          if-no-files-found: error
+          path: packages/desktop/dist/
+
+      - name: Attach installers to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            packages/desktop/dist/*.exe
+            packages/desktop/dist/*.exe.blockmap
+            packages/desktop/dist/*.yml
+
+  desktop-linux:
+    name: Desktop installer (Linux x64, AppImage/deb/rpm)
+    runs-on: ubuntu-latest
+    needs: prepare
+    env:
+      HUSKY: "0"
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm libarchive-tools
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Bundle desktop app
+        run: pnpm bundle:desktop -- --os linux --arch x64
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux-x64
+          if-no-files-found: error
+          path: packages/desktop/dist/
+
+      - name: Attach installers to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            packages/desktop/dist/*.AppImage
+            packages/desktop/dist/*.deb
+            packages/desktop/dist/*.rpm

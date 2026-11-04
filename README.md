@@ -23,6 +23,58 @@ ZCode 是 AI 编程工作台，提供桌面应用、浏览器界面和终端 Age
 - 2026-10-10：更新至 ZCode v3.15.1 版本。
 - 2026-9-23：更新至 ZCode v3.14.3 版本。
 
+## 下载与安装
+
+Gamos（本仓库）沿用 ZCode 的发行模型：命令行运行包托管在下载根地址，通过安装脚本一键安装；桌面安装包提供各平台产物。本仓库的发行物由 [GitHub Releases](https://github.com/payswapdotorg/gamos/releases) 承载，由 [Release 流水线](.github/workflows/gamos-release.yml) 自动构建。
+
+**前置要求**：Node.js（版本见 [mise.toml](mise.toml)，当前 24.14.0）。Windows 10 1803+ / Windows 11 自带 `curl.exe` 与 `tar.exe`，无需额外工具。
+
+### Linux / macOS
+
+```bash
+curl -fsSL https://github.com/payswapdotorg/gamos/releases/latest/download/install.sh | sh
+```
+
+### Windows（PowerShell）
+
+```powershell
+irm https://github.com/payswapdotorg/gamos/releases/latest/download/install.ps1 | iex
+```
+
+或在 CMD 中：
+
+```bat
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://github.com/payswapdotorg/gamos/releases/latest/download/install.ps1 | iex"
+```
+
+### 安装结果
+
+安装脚本默认把运行包安装到 `~/.zcode/runtime`，并创建命令入口：Linux/macOS 在 `~/.local/bin`，Windows 在 `%USERPROFILE%\.zcode\bin`（自动追加到用户 PATH，需新开终端生效）。两个平台均同时提供 `zcode` 与 `gamos` 命令（同一运行时的别名入口）。
+
+```bash
+zcode        # 终端 TUI
+zcode --web  # Web 界面
+gamos        # 同一运行时的别名入口
+```
+
+可用环境变量（与上游一致）：
+
+| 环境变量              | 作用         | 默认值                                                    |
+| --------------------- | ------------ | --------------------------------------------------------- |
+| `ZCODE_DIST_BASE_URL` | 下载根地址   | 安装脚本内置地址（本仓库默认为 GitHub Releases）             |
+| `ZCODE_DIST_HOME`     | 运行时安装目录 | `~/.zcode/runtime`                                        |
+| `ZCODE_DIST_BIN_DIR`  | 命令安装目录 | `~/.local/bin`（Linux/macOS）/ `%USERPROFILE%\.zcode\bin`（Windows） |
+
+安装脚本优先从 `releases/<version>/` 嵌套布局下载运行包；若不可用（如 GitHub Releases 的扁平附件布局）则自动回退到根路径。Windows 安装脚本会按 `latest.json` 中的 `sha256` 校验运行包完整性。
+
+### 桌面版
+
+从 [GitHub Releases](https://github.com/payswapdotorg/gamos/releases) 下载对应平台安装包：Windows（NSIS `.exe`）、Linux（AppImage / `.deb` / `.rpm`）。本地自行打包见[打包](#打包)章节。
+
+### 自托管
+
+`pnpm build:zcode` 生成 `dist/zcode/`，完整目录可上传到任意静态托管（保持目录结构），并把根地址通过 `ZCODE_DIST_BASE_URL` 或 `--base-url` 传给打包与安装脚本。
+
 ## 初始化
 
 准备 Git、Node.js **24.14.0** 和 pnpm **10.33.2**，版本以 [mise.toml](mise.toml) 为准。以下开发和打包命令均在仓库根目录执行。
@@ -192,9 +244,9 @@ pnpm build:zcode --help
 
 - `releases/<version>/zcode-<version>.tar.gz`：运行包。
 - `releases/<version>/sha256.txt`：校验摘要。
-- `latest.json`、`install.sh`：版本索引和安装脚本。
+- `latest.json`、`install.sh`、`install.ps1`：版本索引、Linux/macOS 安装脚本与 Windows 安装脚本。
 
-完整目录可上传到配置的下载根地址。安装脚本从该地址下载运行包，默认安装到 `~/.zcode/runtime`，并在 `~/.local/bin` 创建 `zcode` 命令。安装目录可通过 `ZCODE_DIST_HOME` 修改，命令目录可通过 `ZCODE_DIST_BIN_DIR` 修改。
+完整目录可上传到配置的下载根地址。安装脚本从该地址下载运行包，默认安装到 `~/.zcode/runtime`，并在 `~/.local/bin`（Linux/macOS）或 `%USERPROFILE%\.zcode\bin`（Windows，自动加入用户 PATH）创建 `zcode`/`gamos` 命令。安装目录可通过 `ZCODE_DIST_HOME` 修改，命令目录可通过 `ZCODE_DIST_BIN_DIR` 修改。下载时优先 `releases/<version>/` 嵌套布局，扁平产物托管（如 GitHub Releases 附件）时自动回退根路径。
 
 旧 Lite 用户需要改用上述构建命令、环境变量和新的安装脚本。新安装不会删除旧 Lite 目录，也不会迁移或删除已有会话数据。
 

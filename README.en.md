@@ -23,6 +23,58 @@ ZCode is an AI coding workspace with desktop, browser, and terminal interfaces. 
 - 2026-10-10: Updated to ZCode v3.15.1.
 - 2026-9-23: Updated to ZCode v3.14.3.
 
+## Download and Install
+
+Gamos (this repository) keeps ZCode's distribution model: the CLI runtime package is hosted at a download base URL and installed with a one-line installer script; desktop installers are published per platform. This repository hosts releases on [GitHub Releases](https://github.com/payswapdotorg/gamos/releases), built automatically by the [Release workflow](.github/workflows/gamos-release.yml).
+
+**Requirements**: Node.js (see [mise.toml](mise.toml) — currently 24.14.0). Windows 10 1803+ / Windows 11 ship `curl.exe` and `tar.exe` built in; no extra tools are needed.
+
+### Linux / macOS
+
+```bash
+curl -fsSL https://github.com/payswapdotorg/gamos/releases/latest/download/install.sh | sh
+```
+
+### Windows (PowerShell)
+
+```powershell
+irm https://github.com/payswapdotorg/gamos/releases/latest/download/install.ps1 | iex
+```
+
+Or from CMD:
+
+```bat
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://github.com/payswapdotorg/gamos/releases/latest/download/install.ps1 | iex"
+```
+
+### What gets installed
+
+The installer installs the runtime package to `~/.zcode/runtime` by default and creates command entries: `~/.local/bin` on Linux/macOS, `%USERPROFILE%\.zcode\bin` on Windows (added to the user PATH automatically; open a new terminal to pick it up). Both platforms provide `zcode` and `gamos` commands (alias entries for the same runtime).
+
+```bash
+zcode        # terminal TUI
+zcode --web  # Web interface
+gamos        # alias entry for the same runtime
+```
+
+Environment variables (same as upstream):
+
+| Variable              | Purpose            | Default                                                        |
+| --------------------- | ------------------ | -------------------------------------------------------------- |
+| `ZCODE_DIST_BASE_URL` | Download base URL  | URL baked into the installer (this repo defaults to GitHub Releases) |
+| `ZCODE_DIST_HOME`     | Runtime install dir | `~/.zcode/runtime`                                             |
+| `ZCODE_DIST_BIN_DIR`  | Command install dir | `~/.local/bin` (Linux/macOS) / `%USERPROFILE%\.zcode\bin` (Windows) |
+
+The installer downloads the runtime package from the nested `releases/<version>/` layout first and falls back to the flat root path when that is unavailable (e.g. flat GitHub Releases attachments). The Windows installer verifies the tarball against the `sha256` field in `latest.json`.
+
+### Desktop app
+
+Download the platform installer from [GitHub Releases](https://github.com/payswapdotorg/gamos/releases): Windows (NSIS `.exe`), Linux (AppImage / `.deb` / `.rpm`). To build locally, see [Packaging](#packaging).
+
+### Self-hosting
+
+`pnpm build:zcode` produces `dist/zcode/`. Upload the whole directory to any static host (keeping the directory structure) and pass the base URL to the build and install scripts via `ZCODE_DIST_BASE_URL` or `--base-url`.
+
 ## Setup
 
 Install Git, Node.js **24.14.0**, and pnpm **10.33.2**. [mise.toml](mise.toml) is the source of truth for tool versions. Run all development and packaging commands below from the repository root.
@@ -182,9 +234,9 @@ The version defaults to the root `package.json` version. Output is written to `d
 
 - `releases/<version>/zcode-<version>.tar.gz`: runtime package.
 - `releases/<version>/sha256.txt`: checksum file.
-- `latest.json` and `install.sh`: version index and installer.
+- `latest.json`, `install.sh`, and `install.ps1`: version index, Linux/macOS installer, and Windows installer.
 
-Upload the entire directory to the configured download base URL. The installer downloads the runtime package from that URL, installs it to `~/.zcode/runtime` by default, and creates the `zcode` command in `~/.local/bin`. Override these directories with `ZCODE_DIST_HOME` and `ZCODE_DIST_BIN_DIR`, respectively.
+Upload the entire directory to the configured download base URL. The installer downloads the runtime package from that URL, installs it to `~/.zcode/runtime` by default, and creates the `zcode`/`gamos` commands in `~/.local/bin` (Linux/macOS) or `%USERPROFILE%\.zcode\bin` (Windows, added to the user PATH automatically). Override these directories with `ZCODE_DIST_HOME` and `ZCODE_DIST_BIN_DIR`, respectively. The nested `releases/<version>/` layout is preferred, with an automatic fallback to a flat asset layout (e.g. GitHub Releases attachments).
 
 Existing Lite users should switch to the new build command, environment variables, and installer. Installation does not remove old Lite directories or migrate/delete session data.
 

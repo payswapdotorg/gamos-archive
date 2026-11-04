@@ -1,17 +1,23 @@
 import assert from "node:assert/strict";
 import { execFile, spawn } from "node:child_process";
 import { once } from "node:events";
-import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout } from "node:timers/promises";
 import { promisify } from "node:util";
 import { test } from "node:test";
 import { patchNodePtyPrebuilds } from "./zcode-distribution/assets.mjs";
-import { installScriptSource } from "./zcode-distribution/installer.mjs";
+import { installPowerShellSource, installScriptSource } from "./zcode-distribution/installer.mjs";
 
 const exec = promisify(execFile);
 const runnerSource = new URL("./zcode-distribution/runner.mjs", import.meta.url);
+const hasPwsh = await exec("pwsh", ["-NoProfile", "-Command", "exit 0"])
+  .then(
+    () => true,
+    () => false,
+  )
+  .catch(() => false);
 
 async function fixture(t) {
   const directory = await realpath(await mkdtemp(join(tmpdir(), "zcode-distribution-")));
@@ -176,6 +182,101 @@ test("installer creates zcode and the installed command defaults to CLI", async 
   assert.deepEqual(JSON.parse(result.stdout).argv, []);
   const webHelp = await exec(join(bin, "zcode"), ["--web", "--help"]);
   assert.match(webHelp.stdout, /zcode --web/);
+});
+
+test("installer falls back to a flat tarball layout and exposes the gamos alias", async (t) => {
+  const { directory, root } = await fixture(t);
+  const downloads = join(directory, "downloads");
+  await mkdir(downloads, { recursive: true });
+  // 扁平布局：tarball 直接位于根地址（GitHub Releases 附件形态），无 releases/<version>/ 目录。
+  await exec("tar", ["-czf", join(downloads, "zcode-1.2.3.tar.gz"), "-C", directory, "zcode"]);
+  await writeFile(
+    join(downloads, "latest.json"),
+    JSON.stringify({ version: "1.2.3", tarball: "zcode-1.2.3.tar.gz" }),
+  );
+  const installer = join(directory, "install.sh");
+  await writeFile(installer, installScriptSource(`file://${downloads}/`));
+  const installRoot = join(directory, "installed-flat");
+  const bin = join(directory, "bin-flat");
+  await exec("sh", [installer], {
+    env: {
+      ...process.env,
+      ZCODE_DIST_BASE_URL: `file://${downloads}/`,
+      ZCODE_DIST_HOME: installRoot,
+      ZCODE_DIST_BIN_DIR: bin,
+    },
+  });
+  await rm(root, { recursive: true });
+  const result = await exec(join(bin, "gamos"), [], { cwd: directory });
+  assert.deepEqual(JSON.parse(result.stdout).argv, []);
+  const webHelp = await exec(join(bin, "zcode"), ["--web", "--help"]);
+  assert.match(webHelp.stdout, /zcode --web/);
+});
+
+test("PowerShell installer source mirrors install.sh behavior", () => {
+  const script = installPowerShellSource("https://example.com/zcode/");
+  assert.match(script, /\$ErrorActionPreference = "Stop"/);
+  // 环境变量与 install.sh 保持一致。
+  assert.match(script, /ZCODE_DIST_BASE_URL/);
+  assert.match(script, /ZCODE_DIST_HOME/);
+  assert.match(script, /ZCODE_DIST_BIN_DIR/);
+  // 内置默认下载根地址。
+  assert.match(script, /\$BaseUrl = "https:\/\/example\.com\/zcode\/"/);
+  // 依赖检查与下载工具。
+  assert.match(script, /Require-Command node/);
+  assert.match(script, /Require-Command tar/);
+  assert.match(script, /curl\.exe -fsSL/);
+  assert.match(script, /Invoke-WebRequest -Uri \$Url -OutFile \$OutFile -UseBasicParsing/);
+  // 嵌套布局优先，扁平布局回退。
+  assert.match(script, /\/releases\/" \+ \$Version \+ "\//);
+  assert.match(script, /\(\$BaseUrl \+ "\/" \+ \$Tarball\)/);
+  // sha256 校验。
+  assert.match(script, /Get-FileHash -Algorithm SHA256/);
+  assert.match(script, /sha256 mismatch/);
+  // 安装布局与命令入口。
+  assert.match(script, /Join-Path \$InstallDir \("releases\\" \+ \$Version\)/);
+  assert.match(script, /New-Item -ItemType Junction -Path \$Current -Target \$Target/);
+  assert.match(script, /bin\\zcode\.mjs/);
+  assert.match(script, /@\("zcode", "gamos"\)/);
+  assert.match(script, /Set-Content -Path \(Join-Path \$BinDir \(\$Name \+ "\.cmd"\)\) -Value \$CmdShim -Encoding Ascii/);
+  // 用户 PATH 自动追加。
+  assert.match(script, /SetEnvironmentVariable\("Path"/);
+});
+
+test("PowerShell installer installs the runtime and writes shims", { skip: !hasPwsh }, async (t) => {
+  const { directory, root } = await fixture(t);
+  const downloads = join(directory, "downloads");
+  await mkdir(downloads, { recursive: true });
+  await exec("tar", ["-czf", join(downloads, "zcode-1.2.3.tar.gz"), "-C", directory, "zcode"]);
+  await writeFile(
+    join(downloads, "latest.json"),
+    JSON.stringify({ version: "1.2.3", tarball: "zcode-1.2.3.tar.gz" }),
+  );
+  const installer = join(directory, "install.ps1");
+  await writeFile(installer, installPowerShellSource(`file://${downloads}/`));
+  const installRoot = join(directory, "installed-ps");
+  const bin = join(directory, "bin-ps");
+  await exec("pwsh", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", installer], {
+    env: {
+      ...process.env,
+      ZCODE_DIST_BASE_URL: `file://${downloads}/`,
+      ZCODE_DIST_HOME: installRoot,
+      ZCODE_DIST_BIN_DIR: bin,
+    },
+  });
+  await rm(root, { recursive: true });
+  const releaseRoot = join(installRoot, "releases", "1.2.3");
+  const runner = join(releaseRoot, "bin", "zcode.mjs");
+  assert.ok((await stat(runner)).isFile(), "runtime runner is installed");
+  for (const shim of ["zcode.cmd", "zcode.ps1", "gamos.cmd", "gamos.ps1"]) {
+    assert.ok((await stat(join(bin, shim))).isFile(), `${shim} is written`);
+  }
+  const cmdShim = await readFile(join(bin, "zcode.cmd"), "utf8");
+  assert.match(cmdShim, /@echo off/);
+  assert.match(cmdShim, /node "/);
+  assert.match(cmdShim, /%\*/);
+  const result = await exec(process.execPath, [runner], { cwd: directory });
+  assert.deepEqual(JSON.parse(result.stdout).argv, []);
 });
 
 test("node-pty prebuild patch keeps the official native that matches the official JS", async (t) => {

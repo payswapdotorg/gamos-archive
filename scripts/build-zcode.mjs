@@ -10,7 +10,7 @@ import {
   patchNodePtyPrebuilds,
   stageTuiRuntime,
 } from "./zcode-distribution/assets.mjs";
-import { installScriptSource } from "./zcode-distribution/installer.mjs";
+import { installPowerShellSource, installScriptSource } from "./zcode-distribution/installer.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const defaultOutDir = resolve(root, "dist", "zcode");
@@ -27,7 +27,7 @@ Options:
   --skip-build        Reuse existing web/server/agent build outputs.
   --version <text>    Release version. Defaults to root package.json version.
   --out-dir <path>    Output directory. Defaults to dist/zcode.
-  --base-url <url>    Default install.sh download base URL.
+  --base-url <url>    Default install.sh/install.ps1 download base URL.
   --help, -h          Show this help.
 `;
 
@@ -288,6 +288,8 @@ async function main() {
   const installScript = resolve(outDir, "install.sh");
   await writeFile(installScript, installScriptSource(options.baseUrl));
   await chmod(installScript, 0o755);
+  const installPowerShellScript = resolve(outDir, "install.ps1");
+  await writeFile(installPowerShellScript, installPowerShellSource(options.baseUrl));
   await rm(workDir, {
     force: true,
     recursive: true,
