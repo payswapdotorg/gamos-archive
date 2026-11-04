@@ -102,6 +102,7 @@ jobs:
     env:
       HUSKY: "0"
       CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      ZCODE_ENV: production
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -148,6 +149,7 @@ jobs:
     env:
       HUSKY: "0"
       CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      ZCODE_ENV: production
     steps:
       - name: Check out
         uses: actions/checkout@v4
