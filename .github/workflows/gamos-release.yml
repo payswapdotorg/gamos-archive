@@ -65,6 +65,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Compile source-only runtime packages
+        # 根 @zcode/shared 不提供 build script，但 TUI runtime 闭包需要其 dist
+        # （对齐上游 CI：先编译不提供 build script 的根 shared 包）。
+        run: pnpm --filter @zcode/shared exec tsc -p tsconfig.json
+
       - name: Build CLI distribution
         run: |
           node scripts/build-zcode.mjs \
