@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Gamos Console</title>
+    <style>
+      /*
+       * Gamos Console：视觉只取宿主下发的 MCP Apps 标准变量（hostContext.styles.variables），
+       * 这里给兜底值；浅/深色由 color-scheme + 宿主主题共同决定。
+       */
+      :root {
+        color-scheme: light dark;
+        --fg: var(--color-text-primary, #404040);
+        --subtle: var(--color-text-secondary, #737373);
+        --bg: var(--color-background-primary, #fff);
+        --panel: var(--color-background-secondary, #f5f5f5);
+        --surface: var(--color-background-tertiary, #ededed);
+        --border: var(--color-border-primary, rgba(10, 10, 10, 0.12));
+        --primary: var(--color-background-inverse, #0a0a0a);
+        --primary-fg: var(--color-text-inverse, #fafafa);
+        --danger: var(--color-text-danger, #dc2626);
+        --success: var(--color-text-success, #16a34a);
+        --warning: var(--color-text-warning, #ca8a04);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: var(--font-family-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+        background: var(--bg);
+        color: var(--fg);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--bg);
+        z-index: 2;
+      }
+      header h1 { font-size: 14px; margin: 0; letter-spacing: 0.02em; }
+      header .tag {
+        font-size: 10px;
+        color: var(--primary-fg);
+        background: var(--primary);
+        border-radius: 999px;
+        padding: 1px 8px;
+      }
+      main { padding: 16px; display: flex; flex-direction: column; gap: 20px; }
+      h2 { font-size: 13px; margin: 0 0 8px; }
+      h3 { font-size: 12px; margin: 0 0 8px; }
+      .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+      .card {
+        text-align: left;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--panel);
+        padding: 10px 12px;
+        cursor: pointer;
+        color: inherit;
+        font: inherit;
+      }
+      .card:hover { border-color: var(--subtle); }
+      .card.active { outline: 2px solid var(--primary); }
+      .card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .card-head .name { font-weight: 600; }
+      .card-meta { color: var(--subtle); font-size: 11px; margin-top: 4px; }
+      .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+      .panel {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--panel);
+        padding: 12px;
+      }
+      .meta { color: var(--subtle); margin: 4px 0; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      th { text-align: left; color: var(--subtle); font-weight: 500; padding: 4px 8px 4px 0; }
+      td { padding: 4px 8px 4px 0; border-top: 1px solid var(--border); }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+      .badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 0 8px;
+        font-size: 10px;
+        background: var(--surface);
+        color: var(--subtle);
+        white-space: nowrap;
+      }
+      .badge.pass, .badge.valid, .badge.green, .badge.released, .badge.playable { color: var(--success); }
+      .badge.fail, .badge.invalid { color: var(--danger); }
+      .badge.pending, .badge.inconclusive, .badge.untested, .badge.draft, .badge.in-development { color: var(--warning); }
+      .gates { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+      .gates li { display: grid; grid-template-columns: 10px 130px 1fr; gap: 8px; align-items: baseline; }
+      .gates .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--subtle); align-self: center; }
+      .gates li.pass .dot { background: var(--success); }
+      .gates li.fail .dot { background: var(--danger); }
+      .gates strong { font-size: 11px; font-weight: 600; }
+      .gates span:last-child { color: var(--subtle); font-size: 11px; }
+      button.primary {
+        background: var(--primary);
+        color: var(--primary-fg);
+        border: none;
+        border-radius: 8px;
+        padding: 8px 14px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button.primary:hover { opacity: 0.88; }
+      .empty { color: var(--subtle); font-style: italic; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Gamos Console</h1>
+      <span class="tag">game-native platform</span>
+    </header>
+    <main id="gamos-root"><div class="empty">Connecting to the gamos server…</div></main>
+    <script>
+/*__SCRIPT__*/
+    </script>
+  </body>
+</html>

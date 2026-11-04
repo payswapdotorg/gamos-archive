@@ -181,6 +181,48 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
     version: "0.1.0",
   },
   {
+    // gamos：游戏原生平台插件（fork 演进，规格见 docs/gamos/）。Tool Fabric（MCP server）+
+    // 专家子代理 + 技能/命令 + 工作流模板 + Gamos Console 面板；发布审批仅面板（app-only 工具）。
+    componentTypes: ["ui"],
+    listing: {
+      author: { name: "Gamos", url: "https://github.com/payswapdotorg/gamos" },
+      category: "developer-tools",
+      displayName: "Gamos",
+      displayName_i18n: { "zh-CN": "Gamos 游戏平台" },
+      description_i18n: {
+        "zh-CN": "游戏原生开发平台：世界/GameIR、包权利与出处、试玩证据、发布门禁与 Gamos 控制台。",
+      },
+      examplePrompts: ["Create a 3D endless runner game and playtest it", "Prepare this world for release"],
+      examplePrompts_i18n: {
+        "zh-CN": ["创建一个 3D 无尽跑酷并试玩", "把这个世界推进到可发布"],
+      },
+    },
+    name: "gamos",
+    requiredSeedPaths: [
+      ".zcode-plugin/plugin.json",
+      "commands/spark-create.md",
+      "commands/world-inspect.md",
+      "hooks/hooks.json",
+      "scripts/world-context.mjs",
+      "scripts/release-gate.mjs",
+      "scripts/workflows/create-world.dwf.ts",
+      "skills/gamos-platform/SKILL.md",
+      "skills/gamos-release/SKILL.md",
+      "agents/game-designer.md",
+      "agents/qa-playtester.md",
+      // 缺了会 seed 出能看到面板入口却启动不了 MCP server 的残缺插件。
+      "dist/mcp/server.js",
+      "dist/ui/panel.html",
+    ],
+    rootCandidates: [
+      "packages/gamos-plugin",
+      "../gamos-plugin",
+      "../../gamos-plugin",
+      "../../../gamos-plugin",
+    ],
+    version: "0.1.0",
+  },
+  {
     // manifest 只声明 browser-use skill；宿主 node_repl MCP 独立注入，package 另外携带其 server/client
     // runtime 资产。默认启用仅控制「何时/如何用内置浏览器」的 skill 与 browser bridge。
     defaultEnabled: true,

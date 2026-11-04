@@ -68,6 +68,11 @@ const requiredDevPluginRuntimeBuilds = [
     artifactPath: "ios-simulator-plugin/dist/mcp/server.js",
   },
   {
+    // gamos：游戏原生平台插件（Tool Fabric MCP server + Gamos Console 面板）。
+    packageName: "@zcode/gamos-plugin",
+    artifactPath: "gamos-plugin/dist/mcp/server.js",
+  },
+  {
     // node_repl 宿主：Browser Use 与 Computer Use 共用，产物归属独立包。
     packageName: "@zcode/node-repl-host",
     artifactPath: "node-repl-host/dist/mcp/server.js",

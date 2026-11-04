@@ -1045,6 +1045,20 @@ modules:
       app: .
     owner: plugin
 
+  # gamos-panel：gamos 游戏平台插件的 GameOS 领域层 + Tool Fabric（MCP server）+ Gamos Console 面板。
+  # 不依赖任何 @zcode/* workspace 模块（requires 为空），与宿主只经 MCP 协议与插件机制交互。
+  - id: gamos-panel
+    roots:
+      - apps/zcode-cli/packages/gamos-plugin/src
+    managed: true
+    requires: []
+    publicEntrypoints:
+      - apps/zcode-cli/packages/gamos-plugin/src/index.ts
+      - apps/zcode-cli/packages/gamos-plugin/src/contract.ts
+    layers:
+      app: .
+    owner: plugin
+
   # file-open-apps：由 architecture:adopt 登记
   - id: file-open-apps
     roots:

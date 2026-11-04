@@ -851,6 +851,7 @@ test("allows skill-only official plugins when SEA runtime assets are required", 
     await writeTestFile(root, "packages/browser-use-plugin/docs/workflow.md", "");
     await writeTestFile(root, "packages/browser-use-plugin/scripts/browser-client.mjs", "");
     await writeDocumentPluginFixtures(root);
+    await writeGamosPluginFixture(root);
     await writeTestFile(root, "packages/ios-simulator-plugin/.zcode-plugin/plugin.json", "{}");
     await writeTestFile(root, "packages/ios-simulator-plugin/dist/mcp/server.js", "");
     await writeTestFile(
@@ -1018,6 +1019,7 @@ test("requires the Browser Use client alongside the SEA MCP runtime", async () =
     await writeTestFile(root, "packages/node-repl-host/.zcode-plugin/plugin.json", "{}");
     await writeTestFile(root, "packages/node-repl-host/dist/mcp/server.js", "");
     await writeDocumentPluginFixtures(root);
+    await writeGamosPluginFixture(root);
     await writeTestFile(root, "packages/ios-simulator-plugin/dist/mcp/server.js", "");
 
     await assert.rejects(
@@ -1318,5 +1320,18 @@ async function writeVisualizePluginFixture(root) {
   await writeTestFile(root, "packages/visualize-plugin/.zcode-plugin/plugin.json", "{}");
   for (const path of plugin.requiredSeedPaths) {
     await writeTestFile(root, `packages/visualize-plugin/${path}`, "");
+  }
+}
+
+async function writeGamosPluginFixture(root) {
+  // gamos：带 MCP server 与 Gamos Console 面板的官方运行时插件，fixture 覆盖 seed 与运行时产物。
+  const plugin = officialSeaPlugins.find((item) => item.name === "gamos");
+  assert.ok(plugin);
+  await writeTestFile(root, "packages/gamos-plugin/.zcode-plugin/plugin.json", "{}");
+  for (const path of plugin.requiredSeedPaths ?? []) {
+    await writeTestFile(root, `packages/gamos-plugin/${path}`, "");
+  }
+  for (const path of plugin.requiredRuntimePaths ?? []) {
+    await writeTestFile(root, `packages/gamos-plugin/${path}`, "");
   }
 }

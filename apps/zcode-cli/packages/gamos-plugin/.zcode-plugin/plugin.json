@@ -1,0 +1,51 @@
+{
+  "name": "gamos",
+  "version": "0.1.0",
+  "description": "Gamos game-native platform: World/GameIR tools, package graph with rights and provenance, playtest evidence, release gates, specialist game agents, and the Gamos Console panel.",
+  "author": { "name": "Gamos", "url": "https://github.com/payswapdotorg/gamos" },
+  "homepage": "https://github.com/payswapdotorg/gamos",
+  "repository": "https://github.com/payswapdotorg/gamos",
+  "license": "Apache-2.0",
+  "keywords": ["games", "gamedev", "world", "playtest", "release"],
+  "skills": "skills",
+  "commands": "commands",
+  "agents": "agents",
+  "hooks": "hooks/hooks.json",
+  "mcpServers": {
+    "gamos": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${ZCODE_PLUGIN_ROOT}/dist/mcp/server.js"],
+      "cwd": "${ZCODE_PROJECT_DIR}",
+      "env": {
+        "GAMOS_DEFAULT_ENGINE": "${user_config.default_engine}",
+        "GAMOS_DEFAULT_TARGET": "${user_config.default_target}"
+      },
+      "isolation": "workspace"
+    }
+  },
+  "userConfig": {
+    "default_engine": {
+      "type": "string",
+      "default": "web",
+      "description": "Default game engine for new worlds: web, playcanvas, godot, or unity."
+    },
+    "default_target": {
+      "type": "string",
+      "default": "browser-desktop",
+      "description": "Default target profile for new worlds, for example browser-desktop or browser-mobile."
+    }
+  },
+  "ui": {
+    "surfaces": [
+      {
+        "id": "gamos",
+        "title": { "zh-CN": "Gamos 控制台", "en-US": "Gamos Console" },
+        "icon": "gamepad-2",
+        "server": "gamos",
+        "resourceUri": "ui://gamos/panel.html",
+        "availability": "session"
+      }
+    ]
+  }
+}

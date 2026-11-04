@@ -220,6 +220,15 @@ const officialPluginPackages = [
     stagedPath: "packages/ios-simulator-plugin",
   },
   {
+    // gamos：游戏原生平台插件（Tool Fabric MCP server + Gamos Console 面板）。
+    packageName: "@zcode/gamos-plugin",
+    relativePath: "apps/zcode-cli/packages/gamos-plugin",
+    requiresRuntime: true,
+    requiredRuntimePaths: ["dist/mcp/server.js", "dist/ui/panel.html"],
+    runtimeBuildScript: "scripts/build.mjs",
+    stagedPath: "packages/gamos-plugin",
+  },
+  {
     // 修复原因：restore-legacy-sessions 已注册为官方插件，但 Electron 生产包只会拷贝
     // 这里列出的资源。漏掉它会导致用户生产包首次启动后 plugins list 里看不到该插件。
     packageName: "@zcode/restore-legacy-sessions-plugin",

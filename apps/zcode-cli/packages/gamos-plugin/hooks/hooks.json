@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${ZCODE_PLUGIN_ROOT}/scripts/world-context.mjs\"",
+            "async": false
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "mcp__plugin_gamos_gamos__world_publish",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${ZCODE_PLUGIN_ROOT}/scripts/release-gate.mjs\"",
+            "async": false,
+            "timeoutMs": 10000,
+            "statusMessage": "Gamos release gate check"
+          }
+        ]
+      }
+    ]
+  }
+}
